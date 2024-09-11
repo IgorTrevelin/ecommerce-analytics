@@ -10,7 +10,7 @@ DROP TABLE IF EXISTS product_categories;
 CREATE TABLE product_categories (
     category_id SERIAL NOT NULL,
     product_category VARCHAR(50),
-    product_category_name VARCHAR(100),
+    product_category_name_english VARCHAR(50),
 
     CONSTRAINT pk_product_category PRIMARY KEY (category_id),
     CONSTRAINT un_product_category_name UNIQUE (product_category)
@@ -77,3 +77,49 @@ CREATE TABLE order_items (
     CONSTRAINT fk_order_item_product FOREIGN KEY (product_id) REFERENCES products(product_id),
     CONSTRAINT fk_order_item_seller FOREIGN KEY (seller_id) REFERENCES sellers(seller_id)
 );
+
+CREATE OR REPLACE PROCEDURE sp_create_order_with_items(
+    customer_id INTEGER,
+    products INTEGER[],
+    sellers INTEGER[],
+    prices NUMERIC[],
+    freight_values NUMERIC[]
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    i INTEGER;
+	new_order_id INTEGER;
+BEGIN
+
+	IF array_length(products, 1) != array_length(sellers, 1) OR
+       array_length(products, 1) != array_length(prices, 1) OR
+       array_length(products, 1) != array_length(freight_values, 1) THEN
+        RAISE EXCEPTION 'The provided arrays must be of the same length.';
+    END IF;
+
+    BEGIN
+
+		INSERT INTO orders (customer_id, approved_at, delivered_carrier_at, delivered_customer_at, estimated_delivery_date)
+        VALUES (
+            customer_id,
+            CURRENT_TIMESTAMP + interval '30 seconds',
+            CURRENT_TIMESTAMP + interval '1 day',
+            CURRENT_TIMESTAMP + interval '3 days',
+            CURRENT_TIMESTAMP + interval '3 days'
+        )
+        RETURNING order_id INTO new_order_id;
+
+        FOR i IN 1..array_length(products, 1) LOOP
+            INSERT INTO order_items (order_id, product_id, seller_id, price, freight_value)
+            VALUES (new_order_id, products[i], sellers[i], prices[i], freight_values[i]);
+        END LOOP;
+
+        COMMIT;
+    EXCEPTION
+        WHEN OTHERS THEN
+            ROLLBACK;
+            RAISE;
+    END;
+END;
+$$;

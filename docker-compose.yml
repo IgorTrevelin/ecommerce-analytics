@@ -1,5 +1,6 @@
 services:
   db:
+    container_name: postgres_ecommerce
     image: postgres:latest
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -10,3 +11,4 @@ services:
     restart: unless-stopped
     volumes:
       - ./data/:/var/lib/postgresql/data
+      - ./schema.sql:/sql/schema.sql
