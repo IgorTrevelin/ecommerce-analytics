@@ -1,0 +1,22 @@
+{
+  "ANONYMOUS": [
+    { "next_state": "REGISTRATION", "prob": 0.1 },
+    { "next_state": "LOGIN_CUSTOMER", "prob": 0.9 },
+    { "next_state": "LOGIN_ADMIN", "prob": 0.9 },
+    { "next_state": "LOGIN_SELLER", "prob": 0.9 }
+  ],
+  "REGISTRATION": [
+    { "next_state": "LOGIN_CUSTOMER", "prob": 1.0 },
+    { "next_state": "LOGIN_SELLER", "prob": 0.1 }
+  ],
+  "LOGIN_CUSTOMER": [{ "next_state": "CUSTOMER_PURCHASE", "prob": 1.0 }],
+  "LOGIN_ADMIN": [{ "next_state": "ADMIN_CREATE_PROD_CATEGORY", "prob": 1.0 }],
+  "LOGIN_SELLER": [{ "next_state": "SELLER_CREATE_PRODUCT", "prob": 1.0 }],
+  "CUSTOMER_PURCHASE": [
+    { "next_state": "END", "prob": 1.0 },
+    { "next_state": "CUSTOMER_PURCHASE", "prob": 0.2 }
+  ],
+  "ADMIN_CREATE_PROD_CATEGORY": [{ "next_state": "END", "prob": 1.0 }],
+  "SELLER_CREATE_PRODUCT": [{ "next_state": "END", "prob": 1.0 }],
+  "END": []
+}

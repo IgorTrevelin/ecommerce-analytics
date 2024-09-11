@@ -99,28 +99,25 @@ BEGIN
         RAISE EXCEPTION 'The provided arrays must be of the same length.';
     END IF;
 
-    BEGIN
+    --BEGIN
 
-		INSERT INTO orders (customer_id, approved_at, delivered_carrier_at, delivered_customer_at, estimated_delivery_date)
-        VALUES (
-            customer_id,
-            CURRENT_TIMESTAMP + interval '30 seconds',
-            CURRENT_TIMESTAMP + interval '1 day',
-            CURRENT_TIMESTAMP + interval '3 days',
-            CURRENT_TIMESTAMP + interval '3 days'
-        )
-        RETURNING order_id INTO new_order_id;
+    INSERT INTO orders (customer_id, approved_at, delivered_carrier_date, delivered_customer_date, estimated_delivery_date)
+    VALUES (
+        customer_id,
+        CURRENT_TIMESTAMP + interval '30 seconds',
+        CURRENT_TIMESTAMP + interval '1 day',
+        CURRENT_TIMESTAMP + interval '3 days',
+        CURRENT_TIMESTAMP + interval '3 days'
+    )
+    RETURNING order_id INTO new_order_id;
 
-        FOR i IN 1..array_length(products, 1) LOOP
-            INSERT INTO order_items (order_id, product_id, seller_id, price, freight_value)
-            VALUES (new_order_id, products[i], sellers[i], prices[i], freight_values[i]);
-        END LOOP;
-
-        COMMIT;
-    EXCEPTION
-        WHEN OTHERS THEN
-            ROLLBACK;
-            RAISE;
-    END;
+    FOR i IN 1..array_length(products, 1) LOOP
+        INSERT INTO order_items (order_id, order_item_id, product_id, seller_id, price, freight_value, shipping_limit_date)
+        VALUES (new_order_id, i, products[i], sellers[i], prices[i], freight_values[i], CURRENT_TIMESTAMP + interval '1 day');
+    END LOOP;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE;
+-- END;
 END;
 $$;
