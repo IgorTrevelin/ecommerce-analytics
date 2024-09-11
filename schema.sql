@@ -10,7 +10,7 @@ DROP TABLE IF EXISTS product_categories;
 CREATE TABLE product_categories (
     category_id SERIAL NOT NULL,
     product_category VARCHAR(50),
-    product_category_name_english VARCHAR(50),
+    product_category_english VARCHAR(50),
 
     CONSTRAINT pk_product_category PRIMARY KEY (category_id),
     CONSTRAINT un_product_category_name UNIQUE (product_category)
@@ -31,7 +31,7 @@ CREATE TABLE zip_code_prefixes (
     state CHAR(2) NOT NULL,
 
     CONSTRAINT pk_zip_code_prefix PRIMARY KEY(zip_code_id),
-    CONSTRAINT un_zip_code_prefix UNIQUE (zip_code_prefix)
+    CONSTRAINT un_zip_code_prefix UNIQUE (zip_code_prefix, state)
 );
 
 CREATE TABLE sellers (
@@ -44,6 +44,7 @@ CREATE TABLE sellers (
 
 CREATE TABLE customers (
     customer_id SERIAL NOT NULL,
+    customer_unique_id VARCHAR(32) NOT NULL,
     zip_code_id INTEGER NOT NULL,
 
     CONSTRAINT pk_customer PRIMARY KEY (customer_id),
@@ -56,8 +57,8 @@ CREATE TABLE orders (
     status VARCHAR(11) NOT NULL DEFAULT 'created',
     purchase_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     approved_at TIMESTAMP NULL,
-    delivered_carrier_at TIMESTAMP NULL,
-    delivered_customer_at TIMESTAMP NULL,
+    delivered_carrier_date TIMESTAMP NULL,
+    delivered_customer_date TIMESTAMP NULL,
     estimated_delivery_date DATE NOT NULL,
 
     CONSTRAINT pk_order PRIMARY KEY (order_id),
