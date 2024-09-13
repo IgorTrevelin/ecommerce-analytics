@@ -3,7 +3,7 @@ import pandas as pd
 from urllib.parse import quote_plus
 
 from sqlalchemy import create_engine, text, Connection
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 
 
 def load_csv(filename: str, usecols=None):
@@ -219,13 +219,13 @@ def load_initial_dataset(conn: Connection):
 
 if __name__ == "__main__":
     env_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), ".env")
-    env = dotenv_values(env_file)
+    load_dotenv(env_file)
 
-    host = env.get("POSTGRES_HOST", "127.0.0.1")
-    port = env.get("POSTGRES_PORT", "5432")
-    user = env.get("POSTGRES_USER", "root")
-    password = env.get("POSTGRES_PASSWORD", "postgres")
-    db = env.get("POSTGRES_DB", "postgres")
+    host = os.getenv("POSTGRES_HOST", "127.0.0.1")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    user = os.getenv("POSTGRES_USER", "root")
+    password = os.getenv("POSTGRES_PASSWORD", "postgres")
+    db = os.getenv("POSTGRES_DB", "postgres")
 
     conn = get_postgress_conn(host, port, user, quote_plus(password), db)
     load_initial_dataset(conn)
