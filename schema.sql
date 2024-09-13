@@ -1,13 +1,4 @@
-DROP TABLE IF EXISTS order_items;
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS customers;
-DROP TABLE IF EXISTS sellers;
-DROP TABLE IF EXISTS zip_code_prefixes;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS product_categories;
-
-
-CREATE TABLE product_categories (
+CREATE TABLE IF NOT EXISTS product_categories (
     category_id SERIAL NOT NULL,
     product_category VARCHAR(50),
     product_category_english VARCHAR(50),
@@ -16,7 +7,7 @@ CREATE TABLE product_categories (
     CONSTRAINT un_product_category_name UNIQUE (product_category)
 );
 
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     product_id SERIAL NOT NULL,
     category_id INTEGER NOT NULL,
 
@@ -25,7 +16,7 @@ CREATE TABLE products (
         FOREIGN key(category_id) REFERENCES product_categories(category_id)
 );
 
-CREATE TABLE zip_code_prefixes (
+CREATE TABLE IF NOT EXISTS zip_code_prefixes (
     zip_code_id SERIAL NOT NULL,
     zip_code_prefix VARCHAR(5) NOT NULL,
     state CHAR(2) NOT NULL,
@@ -34,7 +25,7 @@ CREATE TABLE zip_code_prefixes (
     CONSTRAINT un_zip_code_prefix UNIQUE (zip_code_prefix, state)
 );
 
-CREATE TABLE sellers (
+CREATE TABLE IF NOT EXISTS sellers (
     seller_id SERIAL NOT NULL,
     zip_code_id INTEGER NOT NULL,
 
@@ -42,7 +33,7 @@ CREATE TABLE sellers (
     CONSTRAINT fk_seller_zip_code FOREIGN KEY(zip_code_id) REFERENCES zip_code_prefixes(zip_code_id)
 );
 
-CREATE TABLE customers (
+CREATE TABLE IF NOT EXISTS customers (
     customer_id SERIAL NOT NULL,
     customer_unique_id VARCHAR(32) NOT NULL,
     zip_code_id INTEGER NOT NULL,
@@ -51,7 +42,7 @@ CREATE TABLE customers (
     CONSTRAINT fk_customer_zip_code FOREIGN KEY (zip_code_id) REFERENCES zip_code_prefixes(zip_code_id)
 );
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     order_id SERIAL NOT NULL,
     customer_id INTEGER NOT NULL,
     status VARCHAR(11) NOT NULL DEFAULT 'created',
@@ -65,7 +56,7 @@ CREATE TABLE orders (
     CONSTRAINT fk_order_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     order_id INTEGER NOT NULL,
     order_item_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,

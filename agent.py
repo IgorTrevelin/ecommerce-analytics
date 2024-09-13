@@ -5,7 +5,7 @@ from urllib.parse import quote_plus
 from dotenv import dotenv_values
 from sqlalchemy import text, Connection
 
-import sys, os
+import sys, os, time
 
 sys.path.append(os.path.dirname(__file__))
 from init_db import get_postgress_conn
@@ -13,100 +13,131 @@ from init_db import get_postgress_conn
 from typing import Optional, List
 
 
-
 class DBClient:
     def __init__(self, conn: Connection):
         self.conn = conn
 
-
     def get_login_id(self, user_type: Optional[str] = "customer"):
         if user_type == "customer":
-            user_id, = self.conn.execute(text(f"SELECT customer_id FROM customers ORDER BY RANDOM() LIMIT 1;")).fetchone()
+            (user_id,) = self.conn.execute(
+                text(f"SELECT customer_id FROM customers ORDER BY RANDOM() LIMIT 1;")
+            ).fetchone()
         elif user_type == "seller":
-            user_id, = self.conn.execute(text(f"SELECT seller_id FROM sellers ORDER BY RANDOM() LIMIT 1;")).fetchone()
+            (user_id,) = self.conn.execute(
+                text(f"SELECT seller_id FROM sellers ORDER BY RANDOM() LIMIT 1;")
+            ).fetchone()
 
         return user_id
 
-
-    def add_customer(
-        self,
-        customer_unique_id: str,
-        zip_code_id: Optional[int] = None
-    ):
+    def add_customer(self, customer_unique_id: str, zip_code_id: Optional[int] = None):
         if zip_code_id is None:
-            zip_code_id, = self.conn.execute(text(f"SELECT zip_code_id FROM zip_code_prefixes ORDER BY RANDOM() LIMIT 1;")).fetchone()
+            (zip_code_id,) = self.conn.execute(
+                text(
+                    f"SELECT zip_code_id FROM zip_code_prefixes ORDER BY RANDOM() LIMIT 1;"
+                )
+            ).fetchone()
 
-        insert_query = text(f"""
+        insert_query = text(
+            f"""
             INSERT INTO customers (customer_unique_id, zip_code_id)
                 VALUES (:customer_unique_id, :zip_code_id)
-        """)
+        """
+        )
 
-        cursor = self.conn.execute(insert_query, {
-            "customer_unique_id": customer_unique_id,
-            "zip_code_id": zip_code_id,
-        })
+        cursor = self.conn.execute(
+            insert_query,
+            {
+                "customer_unique_id": customer_unique_id,
+                "zip_code_id": zip_code_id,
+            },
+        )
         self.conn.commit()
-
 
     def add_seller(self, zip_code_id: Optional[int] = None):
         if zip_code_id is None:
-            zip_code_id, = self.conn.execute(text(f"SELECT zip_code_id FROM zip_code_prefixes ORDER BY RANDOM() LIMIT 1;")).fetchone()
+            (zip_code_id,) = self.conn.execute(
+                text(
+                    f"SELECT zip_code_id FROM zip_code_prefixes ORDER BY RANDOM() LIMIT 1;"
+                )
+            ).fetchone()
 
-        insert_query = text(f"""
+        insert_query = text(
+            f"""
             INSERT INTO sellers (zip_code_id)
                 VALUES (:zip_code_id)
-        """)
+        """
+        )
 
-        cursor = self.conn.execute(insert_query, {"zip_code_id": zip_code_id,})
+        cursor = self.conn.execute(
+            insert_query,
+            {
+                "zip_code_id": zip_code_id,
+            },
+        )
         self.conn.commit()
-
 
     def add_product_category(
         self,
         product_category: Optional[str] = None,
         product_category_english: Optional[str] = None,
-        complement: Optional[str] = ""
+        complement: Optional[str] = "",
     ):
         if (product_category or product_category_english) is None:
-            product_category, product_category_english = \
-                self.conn.execute(text(f"""
+            product_category, product_category_english = self.conn.execute(
+                text(
+                    f"""
                     SELECT product_category, product_category_english
                     FROM product_categories
                     ORDER BY RANDOM()
                     LIMIT 1;
-                """)).fetchone()
+                """
+                )
+            ).fetchone()
 
-        insert_query = text(f"""
+        insert_query = text(
+            f"""
             INSERT INTO product_categories (product_category, product_category_english)
                 VALUES (:product_category, :product_category_english)
-        """)
+        """
+        )
 
         cursor = self.conn.execute(
             insert_query,
             {
                 "product_category": f"{product_category}{complement}"[-50:],
-                "product_category_english": f"{product_category_english}{complement}"[-50:],
-            }
+                "product_category_english": f"{product_category_english}{complement}"[
+                    -50:
+                ],
+            },
         )
         self.conn.commit()
 
-
     def add_product(self):
-        category_id, = self.conn.execute(text(f"""
+        (category_id,) = self.conn.execute(
+            text(
+                f"""
             SELECT category_id
             FROM product_categories
             ORDER BY RANDOM()
             LIMIT 1;
-        """)).fetchone()
+        """
+            )
+        ).fetchone()
 
-        insert_query = text(f"""
+        insert_query = text(
+            f"""
             INSERT INTO products (category_id)
                 VALUES (:category_id)
-        """)
+        """
+        )
 
-        cursor = self.conn.execute(insert_query, {"category_id": category_id,})
+        cursor = self.conn.execute(
+            insert_query,
+            {
+                "category_id": category_id,
+            },
+        )
         self.conn.commit()
-
 
     def new_order(
         self,
@@ -118,24 +149,39 @@ class DBClient:
         seller_ids: Optional[List[int]] = None,
     ):
         if seller_ids is None:
-            seller_ids = self.conn.execute(text(f"SELECT seller_id FROM sellers ORDER BY RANDOM() LIMIT {len(n_products)};")).fetchall()
+            seller_ids = self.conn.execute(
+                text(
+                    f"SELECT seller_id FROM sellers ORDER BY RANDOM() LIMIT {len(n_products)};"
+                )
+            ).fetchall()
             seller_ids = [row[0] for row in seller_ids]
         seller_ids = f"{{{','.join(map(str, [id for amount, id in zip(n_products, seller_ids) for _ in range(amount)]))}}}"
 
         if product_ids is None:
-            product_ids = self.conn.execute(text(f"SELECT product_id FROM products ORDER BY RANDOM() LIMIT {len(n_products)};")).fetchall()
+            product_ids = self.conn.execute(
+                text(
+                    f"SELECT product_id FROM products ORDER BY RANDOM() LIMIT {len(n_products)};"
+                )
+            ).fetchall()
             product_ids = [row[0] for row in product_ids]
         product_ids = f"{{{','.join(map(str, [id for amount, id in zip(n_products, product_ids) for _ in range(amount)]))}}}"
 
         fix_price = lambda x: f"{x:.2f}"
 
-        prices = [price for amount, price in zip(n_products, prices) for _ in range(amount)]
+        prices = [
+            price for amount, price in zip(n_products, prices) for _ in range(amount)
+        ]
         prices = f"{{{','.join(map(fix_price, prices))}}}"
 
-        freight_values = [freight_value for amount, freight_value in zip(n_products, freight_values) for _ in range(amount)]
+        freight_values = [
+            freight_value
+            for amount, freight_value in zip(n_products, freight_values)
+            for _ in range(amount)
+        ]
         freight_values = f"{{{','.join(map(fix_price, freight_values))}}}"
 
-        query = text(f"""
+        query = text(
+            f"""
             CALL sp_create_order_with_items(
                 :customer_id,
                 :products,
@@ -143,22 +189,24 @@ class DBClient:
                 :prices,
                 :freight_values
             );
-        """)
+        """
+        )
 
-        cursor = self.conn.execute(query, {
-            "customer_id": customer_id,
-            "products": product_ids,
-            "sellers": seller_ids,
-            "prices": prices,
-            "freight_values": freight_values,
-        })
+        cursor = self.conn.execute(
+            query,
+            {
+                "customer_id": customer_id,
+                "products": product_ids,
+                "sellers": seller_ids,
+                "prices": prices,
+                "freight_values": freight_values,
+            },
+        )
 
         self.conn.commit()
 
-
     def close(self):
         self.conn.close()
-
 
 
 class StateManager:
@@ -192,7 +240,6 @@ class StateManager:
         return current_state == "END"
 
 
-
 class SimulationAgent:
     def __init__(self, db: DBClient, sm: StateManager, seed: Optional[int] = None):
         self.db = db
@@ -212,12 +259,10 @@ class SimulationAgent:
             "END": lambda: None,
         }
 
-
     def reset(self):
         self.user_type = None
         self.user_id = None
         self.just_registered = False
-
 
     def registration(self, user_type: str):
         if user_type == "customer":
@@ -227,14 +272,12 @@ class SimulationAgent:
 
         self.just_registered = True
 
-
     def login_customer(self, user_id: Optional[int] = None):
         if user_id is None:
             user_id = self.db.get_login_id(user_type="customer")
 
         self.user_id = user_id
         self.user_type = "customer"
-
 
     def login_seller(self, user_id: Optional[int] = None):
         if user_id is None:
@@ -243,15 +286,12 @@ class SimulationAgent:
         self.user_id = user_id
         self.user_type = "seller"
 
-
     def login_admin(self, user_id: Optional[int] = None):
         self.user_id = user_id
         self.user_type = "admin"
 
-
     def create_product_category(self):
         self.db.add_product_category(complement=self.rng.random())
-
 
     def purchase(self):
         n_prod_types = self.rng.integers(1, 5)
@@ -261,23 +301,35 @@ class SimulationAgent:
 
         self.db.new_order(self.user_id, n_products, prices, freight_values)
 
-
     def create_product(self):
         self.db.add_product()
-
 
     def act(self, current_state, next_state):
         params = {}
         if current_state == "REGISTRATION":
-            params = {"user_type": "customer" if next_state == "LOGIN_CUSTOMER" else "seller"}
+            params = {
+                "user_type": "customer" if next_state == "LOGIN_CUSTOMER" else "seller"
+            }
         elif "LOGIN" in current_state:
             params = {"user_id": self.user_id}
 
         self.take_action[current_state](**params)
 
-
-    def run(self, epochs = 1e6):
+    def run(self, epochs=1e6):
         current_state = "ANONYMOUS"
+
+        if epochs is None:
+            while True:
+                try:
+                    next_state = self.sm.get_next_state(current_state)
+                    self.act(current_state, next_state)
+                    current_state = (
+                        "ANONYMOUS" if current_state == "END" else next_state
+                    )
+
+                    time.sleep(np.random.rand() * 5.0)
+                except KeyboardInterrupt:
+                    exit(0)
 
         for i in range(int(epochs)):
             next_state = self.sm.get_next_state(current_state)
@@ -299,5 +351,4 @@ if __name__ == "__main__":
     db = DBClient(conn)
     sm = StateManager("agent_state.json")
 
-    SimulationAgent(db, sm, seed=42).run(2_000)
-    db.close()
+    SimulationAgent(db, sm, seed=42).run(None)

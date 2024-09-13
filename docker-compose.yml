@@ -12,3 +12,47 @@ services:
     volumes:
       - ./data/:/var/lib/postgresql/data
       - ./schema.sql:/sql/schema.sql
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "rds.logical_replication=1"
+
+  zookeeper:
+    image: debezium/zookeeper:2.7
+    container_name: zookeper
+    ports:
+      - 2181:2181
+      - 3888:3888
+    restart: unless-stopped
+
+  kafka:
+    image: debezium/kafka:2.7
+    container_name: kafka
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
+    environment:
+      - ZOOKEEPER_CONNECT=zookeeper:2181
+    restart: unless-stopped
+
+  debezium:
+    image: debezium/connect:2.7
+    container_name: connect
+    ports:
+      - 8083:8083
+    environment:
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - CONNECT_PLUGINS_PATH=/kafka/connect
+      - CONNECT_PLUGIN_NAME=pgoutput
+    depends_on:
+      - kafka
+      - db
+    volumes:
+      - ./plugins:/kafka/connect
+    restart: unless-stopped
