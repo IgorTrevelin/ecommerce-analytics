@@ -6,6 +6,15 @@ from sqlalchemy import create_engine, text, Connection
 from dotenv import load_dotenv
 
 
+def init_database_schema(conn: Connection):
+    with open(
+        os.path.join(os.path.abspath(os.path.dirname(__file__)), "schema.sql"), "r"
+    ) as f:
+        queries = f.read()
+    conn.execute(text(queries))
+    conn.commit()
+
+
 def load_csv(filename: str, usecols=None):
     return pd.read_csv(f"./olist/{filename}", header=0, dtype="str", usecols=usecols)
 
@@ -107,6 +116,15 @@ def load_initial_dataset(conn: Connection):
         inplace=True,
     )
 
+    max_customers = 100
+    customer_ids = df_customers["customer_id"].unique()[:max_customers]
+    df_customers = df_customers[df_customers["customer_id"].isin(customer_ids)]
+    df_orders = df_orders[df_orders["customer_id"].isin(customer_ids)]
+    order_ids = df_orders["order_id"].unique()
+    df_order_items = df_order_items[df_order_items["order_id"].isin(order_ids)]
+    product_ids = df_order_items["product_id"].unique()
+    df_products = df_products[df_products["product_id"].isin(product_ids)]
+    
     # prepare data to insert into tables
     # - fix identifiers to be in accordance with the new standard defined in the schema (as serial)
     complement = df_products[["product_category"]]
@@ -228,6 +246,12 @@ if __name__ == "__main__":
     db = os.getenv("POSTGRES_DB", "postgres")
 
     conn = get_postgress_conn(host, port, user, quote_plus(password), db)
+
+    try:
+        init_database_schema(conn)
+    except:
+        pass
+
     load_initial_dataset(conn)
 
     conn.close()

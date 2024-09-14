@@ -1,6 +1,5 @@
 services:
   db:
-    container_name: postgres_ecommerce
     image: postgres:latest
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -10,8 +9,7 @@ services:
       - 5432:5432
     restart: unless-stopped
     volumes:
-      - ./data/:/var/lib/postgresql/data
-      - ./schema.sql:/sql/schema.sql
+      - data:/var/lib/postgresql/data
     command:
       - "postgres"
       - "-c"
@@ -19,57 +17,58 @@ services:
       - "-c"
       - "rds.logical_replication=1"
 
-  zookeeper:
-    image: debezium/zookeeper:2.7
-    container_name: zookeper
-    ports:
-      - 2181:2181
-      - 3888:3888
-    restart: unless-stopped
-
-  kafka:
-    image: debezium/kafka:2.7
-    container_name: kafka
-    ports:
-      - 9092:9092
+  kafka-connect:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: connect
     depends_on:
-      - zookeeper
-    environment:
-      - ZOOKEEPER_CONNECT=zookeeper:2181
-    restart: unless-stopped
-
-  debezium:
-    image: debezium/connect:2.7
-    container_name: connect
-    ports:
-      - 8083:8083
-    environment:
-      - GROUP_ID=1
-      - CONFIG_STORAGE_TOPIC=my_connect_configs
-      - OFFSET_STORAGE_TOPIC=my_connect_offsets
-      - BOOTSTRAP_SERVERS=kafka:9092
-      - CONNECT_PLUGINS_PATH=/kafka/connect
-      - CONNECT_PLUGIN_NAME=pgoutput
-    depends_on:
-      - kafka
       - db
-    volumes:
-      - ./plugins:/kafka/connect
+    ports:
+      - "8083:8083"
+    environment:
+      - CONNECT_BOOTSTRAP_SERVERS=${EVENT_HUBS_HOST}:9093
+      - CONNECT_GROUP_ID=connect-cluster-group
+      - CONNECT_CONFIG_STORAGE_TOPIC=connect-cluster-configs
+      - CONNECT_OFFSET_STORAGE_TOPIC=connect-cluster-offsets
+      - CONNECT_STATUS_STORAGE_TOPIC=connect-cluster-status
+      - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_REST_ADVERTISED_HOST_NAME=connect
+      - CONNECT_OFFSET_FLUSH_INTERVAL_MS=10000
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_KEY_CONVERTER_SCHEMAS_ENABLE=false
+      - CONNECT_INTERNAL_VALUE_CONVERTER_SCHEMAS_ENABLE=false
+      - CONNECT_SECURITY_PROTOCOL=SASL_SSL
+      - CONNECT_SASL_MECHANISM=PLAIN
+      - CONNECT_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="$$ConnectionString" password="${EVENT_HUBS_CONN_STRING}";
+      - CONNECT_PRODUCER_SECURITY_PROTOCOL=SASL_SSL
+      - CONNECT_PRODUCER_SASL_MECHANISM=PLAIN
+      - CONNECT_PRODUCER_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="$$ConnectionString" password="${EVENT_HUBS_CONN_STRING}";
+      - CONNECT_CONSUMER_SECURITY_PROTOCOL=SASL_SSL
+      - CONNECT_CONSUMER_SASL_MECHANISM=PLAIN
+      - CONNECT_CONSUMER_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="$$ConnectionString" password="${EVENT_HUBS_CONN_STRING}";
     restart: unless-stopped
 
   init:
     build:
       context: .
       dockerfile: Dockerfile
-      target: init_db
+      target: init
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST:-db}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - EVENT_HUBS_HOST=${EVENT_HUBS_HOST}
     depends_on:
       - db
+      - kafka-connect
 
   agent:
     build:
@@ -83,5 +82,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
     depends_on:
-      - init
+      init:
+        condition: service_completed_successfully
     restart: unless-stopped
+
+volumes:
+  data:
