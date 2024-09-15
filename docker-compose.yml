@@ -52,6 +52,11 @@ services:
       - CONNECT_CONSUMER_SECURITY_PROTOCOL=SASL_SSL
       - CONNECT_CONSUMER_SASL_MECHANISM=PLAIN
       - CONNECT_CONSUMER_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="$$ConnectionString" password="${EVENT_HUBS_CONN_STRING}";
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/connectors"]
+      interval: 30s  # How often to perform the check
+      timeout: 10s   # Timeout before failing the check
+      retries: 5     # Number of retries before marking the container as unhealthy
     restart: unless-stopped
 
   init:
@@ -67,8 +72,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - EVENT_HUBS_HOST=${EVENT_HUBS_HOST}
     depends_on:
-      - db
-      - kafka-connect
+      kafka-connect:
+        condition: service_healthy
 
   agent:
     build:

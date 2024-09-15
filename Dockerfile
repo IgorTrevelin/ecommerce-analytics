@@ -25,16 +25,17 @@ RUN apt-get update && apt-get install -y curl
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
-COPY pyproject.toml poetry.lock init_db.py agent.py agent_state.json schema.sql /app/
+COPY pyproject.toml poetry.lock init_db.py agent.py agent_state.json schema.sql init_db.sh /app/
 
 COPY olist /app/olist
 
+RUN chmod +x init_db.sh
 
 RUN poetry install
 
 FROM base AS init
 
-CMD [ "poetry", "run", "python", "init_db.py" ]
+CMD /app/init_db.sh
 
 FROM base AS agent
 
