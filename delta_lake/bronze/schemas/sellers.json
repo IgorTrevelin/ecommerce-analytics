@@ -1,0 +1,17 @@
+{
+  "fields": [
+    {
+      "metadata": {},
+      "name": "seller_id",
+      "nullable": true,
+      "type": "integer"
+    },
+    {
+      "metadata": {},
+      "name": "zip_code_id",
+      "nullable": true,
+      "type": "integer"
+    }
+  ],
+  "type": "struct"
+}

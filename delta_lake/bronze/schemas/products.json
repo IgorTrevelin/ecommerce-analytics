@@ -1,0 +1,17 @@
+{
+  "fields": [
+    {
+      "metadata": {},
+      "name": "product_id",
+      "nullable": true,
+      "type": "integer"
+    },
+    {
+      "metadata": {},
+      "name": "category_id",
+      "nullable": true,
+      "type": "integer"
+    }
+  ],
+  "type": "struct"
+}
