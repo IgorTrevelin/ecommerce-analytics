@@ -1,0 +1,12 @@
+bundle:
+  name: ecommerce_analytics
+
+include:
+  - delta_lake/resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-4179197974158107.7.azuredatabricks.net

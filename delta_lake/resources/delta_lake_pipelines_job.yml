@@ -1,0 +1,104 @@
+resources:
+  jobs:
+    delta_lake_pipelines_job:
+      name: delta_lake_pipelines_job
+
+      schedule:
+        quartz_cron_expression: "0 0 0 * * ?"
+        timezone_id: America/Sao_Paulo
+
+      # email_notifications:
+      #   on_failure:
+      #     - user@company.com
+
+      tasks:
+        # customers pipeline tasks
+        - task_key: bronze_customers
+          job_cluster_key: job_cluster
+          notebook_task:
+            notebook_path: ../bronze/ehubs_stream_ingestion.py
+            base_parameters:
+              catalog: dbs_data_eng
+              table_name: customers
+              schema_filename: customers.json
+              ehubs_topic: postgres.public.order_items
+              primary_key: customer_id
+
+        # products pipeline tasks
+        - task_key: bronze_products
+          job_cluster_key: job_cluster
+          notebook_task:
+            notebook_path: ../bronze/ehubs_stream_ingestion.py
+            base_parameters:
+              catalog: dbs_data_eng
+              table_name: products
+              schema_filename: products.json
+              ehubs_topic: postgres.public.products
+              primary_key: product_id
+
+        # product categories pipeline tasks
+        - task_key: bronze_product_categories
+          job_cluster_key: job_cluster
+          notebook_task:
+            notebook_path: ../bronze/ehubs_stream_ingestion.py
+            base_parameters:
+              catalog: dbs_data_eng
+              table_name: product_categories
+              schema_filename: product_categories.json
+              ehubs_topic: postgres.public.product_categories
+              primary_key: category_id
+
+        # sellers pipeline tasks
+        - task_key: bronze_sellers
+          job_cluster_key: job_cluster
+          notebook_task:
+            notebook_path: ../bronze/ehubs_stream_ingestion.py
+            base_parameters:
+              catalog: dbs_data_eng
+              table_name: sellers
+              schema_filename: sellers.json
+              ehubs_topic: postgres.public.sellers
+              primary_key: seller_id
+
+        # zip_code_prefixes pipeline tasks
+        - task_key: bronze_zip_code_prefixes
+          job_cluster_key: job_cluster
+          notebook_task:
+            notebook_path: ../bronze/ehubs_stream_ingestion.py
+            base_parameters:
+              catalog: dbs_data_eng
+              table_name: zip_code_prefixes
+              schema_filename: zip_code_prefixes.json
+              ehubs_topic: postgres.public.zip_code_prefixes
+              primary_key: zip_code_id
+
+        # orders pipeline tasks
+        - task_key: bronze_orders
+          job_cluster_key: job_cluster
+          notebook_task:
+            notebook_path: ../bronze/ehubs_stream_ingestion.py
+            base_parameters:
+              catalog: dbs_data_eng
+              table_name: orders
+              schema_filename: orders.json
+              ehubs_topic: postgres.public.orders
+              primary_key: order_id
+
+        # order_items pipeline tasks
+        - task_key: bronze_order_items
+          job_cluster_key: job_cluster
+          notebook_task:
+            notebook_path: ../bronze/ehubs_stream_ingestion.py
+            base_parameters:
+              catalog: dbs_data_eng
+              table_name: order_items
+              schema_filename: order_items.json
+              ehubs_topic: postgres.public.order_items
+              primary_key: order_id, order_item_id
+
+      job_clusters:
+        - job_cluster_key: job_cluster
+          new_cluster:
+            spark_version: 14.3.x-scala2.12
+            node_type_id: Standard_D3_v2
+            num_workers: 1
