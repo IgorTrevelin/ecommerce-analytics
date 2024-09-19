@@ -101,5 +101,17 @@ resources:
           new_cluster:
             spark_version: 14.3.x-scala2.12
             node_type_id: Standard_DS3_v2
+            custom_tags:
+              ResourceClass: "SingleNode"
+            data_security_mode: "SINGLE_USER"
+            runtime_engine: "STANDARD"
             num_workers: 1
-            
+            azure_attributes:
+              first_on_demand: 1
+              availability: "ON_DEMAND_AZURE"
+              spot_bid_max_price: -1
+            spark_conf:
+              spark.databricks.cluster.profile: "singleNode"
+              spark.databricks.delta.properties.defaults.enableChangeDataFeed: "true"
+              spark.databricks.delta.autoCompact.enabled: "auto"
+              spark.databricks.delta.optimizeWrite.enabled: "true"

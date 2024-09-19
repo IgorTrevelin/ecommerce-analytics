@@ -1,7 +1,5 @@
 # Databricks notebook source
-# MAGIC %run ../make_imports
 
-# COMMAND ----------
 import os
 import sys
 sys.path.append(os.path.abspath(".."))
@@ -9,6 +7,7 @@ sys.path.append(os.path.abspath(".."))
 import json
 from pyspark.sql.types import StructType
 from common.hubs_stream_ingestion import HubsStreamIngestion
+from common.utils import checkpoint_location
 
 # COMMAND ----------
 
