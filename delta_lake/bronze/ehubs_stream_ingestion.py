@@ -2,12 +2,13 @@
 # MAGIC %run ../make_imports
 
 # COMMAND ----------
+import os
+import sys
+sys.path.append(os.path.abspath(".."))
 
 import json
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, TimestampType
-import pyspark.sql.functions as F
-from delta.tables import DeltaTable
-from delta_lake.lib.hubs_stream_ingestion import HubsStreamIngestion
+from pyspark.sql.types import StructType
+from common.hubs_stream_ingestion import HubsStreamIngestion
 
 # COMMAND ----------
 
