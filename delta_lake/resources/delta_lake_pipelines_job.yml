@@ -21,7 +21,7 @@ resources:
               catalog: dbs_data_eng
               table_name: customers
               schema_filename: customers.json
-              ehubs_topic: postgres.public.order_items
+              ehubs_topic: postgres.public.customers
               primary_key: customer_id
 
         # products pipeline tasks
