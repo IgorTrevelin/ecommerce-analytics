@@ -5,6 +5,7 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType
 from pyspark.sql.functions import from_json, col, desc, row_number, when, expr
 from pyspark.sql.window import Window
 from delta.tables import DeltaTable
+from .utils import table_exists
 
 class HubsStreamIngestion:
     def __init__(
@@ -83,18 +84,14 @@ class HubsStreamIngestion:
             )
         )
 
-    def target_exists(self):
-        query = self.spark.sql(f"""
-            SELECT 1 
-            FROM {self.target_catalog}.information_schema.tables 
-            WHERE table_name = '{self.target_table}' 
-            AND table_schema='{self.target_schema}' LIMIT 1""",
-        )
-
-        return query.count() > 0
+    
 
     def _upsert_batch(self, df_updates, batch_id):
-        target_exists = self.target_exists()
+        target_exists = table_exists(
+            self.target_catalog,
+            self.target_schema,
+            self.target_table
+        )
 
         df_last_truncate_table = (
             df_updates
@@ -138,7 +135,7 @@ class HubsStreamIngestion:
             .merge(
                 df_updates.alias('source'),
                 " AND ".join([f"target.{pk} = source.{pk}" for pk in self.primary_keys])
-            ) 
+            )
             .whenMatchedUpdate(
                 condition=col("source.op") == "u",
                 set=update_fields
