@@ -9,12 +9,12 @@ from common.utils import checkpoint_location
 
 # COMMAND ----------
 
-source_table = "dbs_data_eng.bronze.customers"
-target_catalog = "dbs_data_eng"
-target_schema = "silver"
-target_table = "customers"
-primary_key = ["customer_id"]
-query_file = "customers.sql"
+source_table = dbutils.widgets.get("source_table")
+target_catalog = dbutils.widgets.get("target_catalog")
+target_schema = dbutils.widgets.get("target_schema")
+target_table = dbutils.widgets.get("target_table")
+primary_key = [pk.strip() for pk in dbutils.widgets.get("primary_key").split(",")]
+query_file = dbutils.widgets.get("query_file")
 checkpoint_location_path = checkpoint_location(
     "silver",
     target_table
@@ -30,13 +30,7 @@ stream = DeltaCDFStreamIngestion(
     target_schema=target_schema,
     target_table=target_table,
     primary_key=primary_key,
-    query_file=query_file
+    query_file=f"sql/{query_file}"
 )
 
-# COMMAND ----------
-
 stream.upsert({"availableNow": True})
-
-# COMMAND ----------
-
-
