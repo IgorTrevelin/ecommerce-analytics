@@ -14,7 +14,8 @@ class DeltaCDFStreamIngestion:
         target_catalog: str,
         target_schema: str,
         target_table: str,
-        primary_key: List[str],
+        source_primary_key: List[str],
+        target_primary_key: List[str],
         query_file: str
     ):
         self.spark = spark
@@ -23,7 +24,8 @@ class DeltaCDFStreamIngestion:
         self.target_catalog = target_catalog
         self.target_schema = target_schema
         self.target_table = target_table
-        self.primary_key = primary_key
+        self.source_primary_key = source_primary_key
+        self.target_primary_key = target_primary_key
         self.query_file = query_file
 
     def get_source_df_stream(self) -> DataFrame:
@@ -39,7 +41,6 @@ class DeltaCDFStreamIngestion:
     def get_source_df_updates(self) -> DataFrame:
         df_source = self.get_source_df_stream()
 
-        pk = ", ".join(self.primary_key)
         query = """
             SELECT
                 *,
@@ -73,17 +74,26 @@ class DeltaCDFStreamIngestion:
             query = f.read()
             return query
 
+    def _hook_query(self, query: str):
+        query_parts = query.split("FROM ")
+
+        assert len(query_parts) == 2
+
+        return " ".join([query_parts[0], ", op, ts", "FROM ", query_parts[1]])
+
+
     def _batch_upsert(self, df_batch: DataFrame, batch_id: int):
         global_temp_name = f"df_batch_{self.target_schema}_{self.target_table}"
         df_batch.createOrReplaceGlobalTempView(global_temp_name)
 
-        pk = ", ".join(self.primary_key)
+        pk = ", ".join(self.source_primary_key)
         query_last = f"""
             SELECT *
             FROM global_temp.{global_temp_name}
             QUALIFY ROW_NUMBER() OVER (PARTITION BY {pk} ORDER BY ts DESC) = 1
         """
         df_last = self.spark.sql(query_last)
+        df_last.createOrReplaceGlobalTempView(global_temp_name)
 
         target_exists = table_exists(
             self.spark,
@@ -92,10 +102,10 @@ class DeltaCDFStreamIngestion:
             self.target_table
         )
 
-        df_last.createOrReplaceGlobalTempView(global_temp_name)
-
         df_query = self.spark.sql(
-            self.load_query().replace("{df}", f"global_temp.{global_temp_name}")
+            self._hook_query(
+                self.load_query().replace("{df}", f"global_temp.{global_temp_name}")
+            )
         )
 
         if not target_exists:
@@ -114,15 +124,15 @@ class DeltaCDFStreamIngestion:
                 df_query.alias("source"),
                 " AND ".join([
                     f"target.{pk} = source.{pk}"
-                    for pk in self.primary_key
+                    for pk in self.target_primary_key
                 ])
             )
             .whenMatchedUpdate(
-                condition="op = 'u'",
+                condition="source.op = 'u'",
                 set=update_fields
             )
             .whenMatchedDelete(
-                condition="op = 'd'"
+                condition="source.op = 'd'"
             )
             .whenNotMatchedInsert(values=update_fields)
             .execute()
