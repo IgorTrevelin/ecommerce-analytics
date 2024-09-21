@@ -74,12 +74,13 @@ class DeltaCDFStreamIngestion:
             return query
 
     def _batch_upsert(self, df_batch: DataFrame, batch_id: int):
-        df_batch.createOrReplaceGlobalTempView("df_batch")
+        global_temp_name = f"df_batch_{self.target_schema}_{self.target_table}"
+        df_batch.createOrReplaceGlobalTempView(global_temp_name)
 
         pk = ", ".join(self.primary_key)
         query_last = f"""
             SELECT *
-            FROM global_temp.df_batch
+            FROM global_temp.{global_temp_name}
             QUALIFY ROW_NUMBER() OVER (PARTITION BY {pk} ORDER BY ts DESC) = 1
         """
         df_last = self.spark.sql(query_last)
@@ -91,10 +92,10 @@ class DeltaCDFStreamIngestion:
             self.target_table
         )
 
-        df_last.createOrReplaceGlobalTempView("df_last")
+        df_last.createOrReplaceGlobalTempView(global_temp_name)
 
         df_query = self.spark.sql(
-            self.load_query().replace("{df}", "global_temp.df_last")
+            self.load_query().replace("{df}", f"global_temp.{global_temp_name}")
         )
 
         if not target_exists:
@@ -107,7 +108,7 @@ class DeltaCDFStreamIngestion:
         }
 
         (
-            DeltaTable.forName(self.target_full_name)
+            DeltaTable.forName(self.spark, self.target_full_name)
             .alias("target")
             .merge(
                 df_query.alias("source"),

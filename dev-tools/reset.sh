@@ -1,5 +1,7 @@
 #!/bin/bash
 
+docker compose down -v
+
 eventhubs=(
     "connect-cluster-configs"
     "connect-cluster-offsets"
@@ -24,3 +26,5 @@ for eventhub in "${eventhubs[@]}"; do
     echo "Failed to delete $eventhub"
   fi
 done
+
+docker compose up -d

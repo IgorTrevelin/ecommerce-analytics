@@ -14,7 +14,7 @@ resources:
       tasks:
         # customers pipeline tasks
         - task_key: bronze_customers
-          job_cluster_key: job_cluster
+          existing_cluster_id: 0915-005332-kn6e5bt4
           notebook_task:
             notebook_path: ../bronze/ehubs_stream_ingestion.py
             base_parameters:
@@ -24,9 +24,23 @@ resources:
               ehubs_topic: postgres.public.customers
               primary_key: customer_id
 
+        - task_key: silver_customers
+          existing_cluster_id: 0915-005332-kn6e5bt4
+          depends_on:
+            - task_key: bronze_customers
+          notebook_task:
+            notebook_path: ../silver/bronze_to_silver_cdf_ingestion.py
+            base_parameters:
+              source_table: dbs_data_eng.bronze.customers
+              target_catalog: dbs_data_eng
+              target_schema: silver
+              target_table: customers
+              primary_key: customer_id
+              query_file: customers.sql
+
         # products pipeline tasks
         - task_key: bronze_products
-          job_cluster_key: job_cluster
+          existing_cluster_id: 0915-005332-kn6e5bt4
           notebook_task:
             notebook_path: ../bronze/ehubs_stream_ingestion.py
             base_parameters:
@@ -36,9 +50,23 @@ resources:
               ehubs_topic: postgres.public.products
               primary_key: product_id
 
+        - task_key: silver_products
+          existing_cluster_id: 0915-005332-kn6e5bt4
+          depends_on:
+            - task_key: bronze_products
+          notebook_task:
+            notebook_path: ../silver/bronze_to_silver_cdf_ingestion.py
+            base_parameters:
+              source_table: dbs_data_eng.bronze.products
+              target_catalog: dbs_data_eng
+              target_schema: silver
+              target_table: products
+              primary_key: product_id
+              query_file: products.sql
+
         # product categories pipeline tasks
         - task_key: bronze_product_categories
-          job_cluster_key: job_cluster
+          existing_cluster_id: 0915-005332-kn6e5bt4
           notebook_task:
             notebook_path: ../bronze/ehubs_stream_ingestion.py
             base_parameters:
@@ -48,9 +76,23 @@ resources:
               ehubs_topic: postgres.public.product_categories
               primary_key: category_id
 
+        - task_key: silver_product_categories
+          existing_cluster_id: 0915-005332-kn6e5bt4
+          depends_on:
+            - task_key: bronze_product_categories
+          notebook_task:
+            notebook_path: ../silver/bronze_to_silver_cdf_ingestion.py
+            base_parameters:
+              source_table: dbs_data_eng.bronze.product_categories
+              target_catalog: dbs_data_eng
+              target_schema: silver
+              target_table: product_categories
+              primary_key: category_id
+              query_file: product_categories.sql
+
         # sellers pipeline tasks
         - task_key: bronze_sellers
-          job_cluster_key: job_cluster
+          existing_cluster_id: 0915-005332-kn6e5bt4
           notebook_task:
             notebook_path: ../bronze/ehubs_stream_ingestion.py
             base_parameters:
@@ -60,9 +102,23 @@ resources:
               ehubs_topic: postgres.public.sellers
               primary_key: seller_id
 
+        - task_key: silver_sellers
+          existing_cluster_id: 0915-005332-kn6e5bt4
+          depends_on:
+            - task_key: bronze_sellers
+          notebook_task:
+            notebook_path: ../silver/bronze_to_silver_cdf_ingestion.py
+            base_parameters:
+              source_table: dbs_data_eng.bronze.sellers
+              target_catalog: dbs_data_eng
+              target_schema: silver
+              target_table: sellers
+              primary_key: seller_id
+              query_file: sellers.sql
+
         # zip_code_prefixes pipeline tasks
         - task_key: bronze_zip_code_prefixes
-          job_cluster_key: job_cluster
+          existing_cluster_id: 0915-005332-kn6e5bt4
           notebook_task:
             notebook_path: ../bronze/ehubs_stream_ingestion.py
             base_parameters:
@@ -72,9 +128,23 @@ resources:
               ehubs_topic: postgres.public.zip_code_prefixes
               primary_key: zip_code_id
 
+        - task_key: silver_zip_code_prefixes
+          existing_cluster_id: 0915-005332-kn6e5bt4
+          depends_on:
+            - task_key: bronze_zip_code_prefixes
+          notebook_task:
+            notebook_path: ../silver/bronze_to_silver_cdf_ingestion.py
+            base_parameters:
+              source_table: dbs_data_eng.bronze.zip_code_prefixes
+              target_catalog: dbs_data_eng
+              target_schema: silver
+              target_table: zip_code_prefixes
+              primary_key: zip_code_id
+              query_file: zip_code_prefixes.sql
+
         # orders pipeline tasks
         - task_key: bronze_orders
-          job_cluster_key: job_cluster
+          existing_cluster_id: 0915-005332-kn6e5bt4
           notebook_task:
             notebook_path: ../bronze/ehubs_stream_ingestion.py
             base_parameters:
@@ -84,9 +154,23 @@ resources:
               ehubs_topic: postgres.public.orders
               primary_key: order_id
 
+        - task_key: silver_orders
+          existing_cluster_id: 0915-005332-kn6e5bt4
+          depends_on:
+            - task_key: bronze_orders
+          notebook_task:
+            notebook_path: ../silver/bronze_to_silver_cdf_ingestion.py
+            base_parameters:
+              source_table: dbs_data_eng.bronze.orders
+              target_catalog: dbs_data_eng
+              target_schema: silver
+              target_table: orders
+              primary_key: order_id
+              query_file: orders.sql
+
         # order_items pipeline tasks
         - task_key: bronze_order_items
-          job_cluster_key: job_cluster
+          existing_cluster_id: 0915-005332-kn6e5bt4
           notebook_task:
             notebook_path: ../bronze/ehubs_stream_ingestion.py
             base_parameters:
@@ -95,6 +179,20 @@ resources:
               schema_filename: order_items.json
               ehubs_topic: postgres.public.order_items
               primary_key: order_id, order_item_id
+
+        - task_key: silver_order_items
+          existing_cluster_id: 0915-005332-kn6e5bt4
+          depends_on:
+            - task_key: bronze_order_items
+          notebook_task:
+            notebook_path: ../silver/bronze_to_silver_cdf_ingestion.py
+            base_parameters:
+              source_table: dbs_data_eng.bronze.order_items
+              target_catalog: dbs_data_eng
+              target_schema: silver
+              target_table: order_items
+              primary_key: order_id, order_item_id
+              query_file: order_items.sql
 
       job_clusters:
         - job_cluster_key: job_cluster
