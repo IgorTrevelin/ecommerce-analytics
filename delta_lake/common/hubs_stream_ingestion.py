@@ -88,6 +88,7 @@ class HubsStreamIngestion:
 
     def _upsert_batch(self, df_updates, batch_id):
         target_exists = table_exists(
+            self.spark,
             self.target_catalog,
             self.target_schema,
             self.target_table

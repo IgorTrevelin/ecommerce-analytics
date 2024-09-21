@@ -74,13 +74,15 @@ class DeltaCDFStreamIngestion:
             return query
 
     def _batch_upsert(self, df_batch: DataFrame, batch_id: int):
-        query_last = """
+        df_batch.createOrReplaceGlobalTempView("df_batch")
+
+        pk = ", ".join(self.primary_key)
+        query_last = f"""
             SELECT *
-            FROM {df_batch}
+            FROM global_temp.df_batch
             QUALIFY ROW_NUMBER() OVER (PARTITION BY {pk} ORDER BY ts DESC) = 1
         """
-
-        df_last = self.spark.sql(query_last, df_batch=df_batch, pk=", ".join(self.primary_key))
+        df_last = self.spark.sql(query_last)
 
         target_exists = table_exists(
             self.spark,
@@ -89,10 +91,14 @@ class DeltaCDFStreamIngestion:
             self.target_table
         )
 
-        df_query = self.spark.sql(self.load_query(), df=df_last)
+        df_last.createOrReplaceGlobalTempView("df_last")
+
+        df_query = self.spark.sql(
+            self.load_query().replace("{df}", "global_temp.df_last")
+        )
 
         if not target_exists:
-            df_query.write.mode("overwrite").saveAsTable(self.target_table)
+            df_query.write.mode("overwrite").saveAsTable(self.target_full_name)
             return
         
         update_fields = {
