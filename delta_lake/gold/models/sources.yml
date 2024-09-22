@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: silver
+    database: dbs_data_eng
+    schema: silver
+    tables:
+      - name: products
+      - name: product_categories
+      - name: sellers
+      - name: customers
+      - name: zip_code_prefixes
+      - name: orders
+      - name: order_items

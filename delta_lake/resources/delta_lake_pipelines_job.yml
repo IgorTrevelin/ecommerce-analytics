@@ -2,6 +2,11 @@ resources:
   jobs:
     delta_lake_pipelines_job:
       name: delta_lake_pipelines_job
+      max_concurrent_runs: 1
+      # git_source:
+      #   git_provider: github
+      #   git_url: https://github.com/IgorTrevelin/ecommerce-analytics
+      #   git_branch: main
 
       schedule:
         quartz_cron_expression: "0 0 0 * * ?"
@@ -196,6 +201,26 @@ resources:
               source_primary_key: order_id, order_item_id
               target_primary_key: order_id, order_item_id
               query_file: order_items.sql
+        
+        - task_key: dbt_gold_models
+          job_cluster_key: delta_lake_pipelines_cluster
+          depends_on:
+            - task_key: silver_customers
+            - task_key: silver_products
+            - task_key: silver_product_categories
+            - task_key: silver_sellers
+            - task_key: silver_zip_code_prefixes
+            - task_key: silver_orders
+            - task_key: silver_order_items
+          dbt_task:
+            commands:
+              - dbt deps
+              - dbt run
+            project_directory: "../../"
+            profiles_directory: ""
+          libraries:
+            - pypi:
+                package: dbt-databricks>=1.8.6,<2.0.0
 
       job_clusters:
         - job_cluster_key: delta_lake_pipelines_cluster

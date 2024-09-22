@@ -1,0 +1,19 @@
+name: "ecommerce_analytics"
+version: "1.0.0"
+
+profile: "dbt_databricks"
+
+model-paths: ["delta_lake/gold/models"]
+analysis-paths: []
+test-paths: []
+seed-paths: []
+macro-paths: []
+snapshot-paths: []
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  ecommerce_analytics:
+    +materialized: table

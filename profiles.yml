@@ -1,0 +1,11 @@
+dbt_databricks:
+  outputs:
+    prod:
+      catalog: dbs_data_eng
+      host: adb-4179197974158107.7.azuredatabricks.net
+      http_path: sql/protocolv1/o/4179197974158107/0915-005332-kn6e5bt4
+      schema: gold
+      threads: 1
+      token: "{{ env_var('DBT_ACCESS_TOKEN') }}"
+      type: databricks
+  target: prod
