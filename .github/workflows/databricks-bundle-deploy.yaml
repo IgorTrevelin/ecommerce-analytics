@@ -1,0 +1,25 @@
+name: "Databricks Bundle Deploy"
+
+concurrency: 1
+
+on:
+  push:
+    branches:
+        - main
+
+jobs:
+  deploy:
+    name: "Deploy bundle"
+    runs-on: ubuntu-latest
+
+    steps:
+        # Check out this repo, so that this workflow can access it.
+        - uses: actions/checkout@v3
+
+        - uses: databricks/setup-cli@main
+
+        - run: databricks bundle deploy
+          working-directory: .
+          env:
+            DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
+            DATABRICKS_BUNDLE_ENV: prod
