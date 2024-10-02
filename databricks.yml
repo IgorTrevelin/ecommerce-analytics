@@ -16,3 +16,9 @@ targets:
     default: false
     workspace:
       host: https://adb-4179197974158107.7.azuredatabricks.net
+    resources:
+      jobs:
+        delta_lake_pipelines_job:
+          name: delta_lake_pipelines_job
+          run_as:
+            user_name: admin@igortrevelinxavieroutlook.onmicrosoft.com
